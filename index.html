@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Falsafa Duel — Jamiyat falsafasi</title>
+<style>
+  :root{
+    --bg:#0c0a1d;
+    --ink:#f4eedc;
+    --muted:#a9a3c7;
+    --gold:#f5c96a;
+    --red:#ff4d5e;
+    --blue:#3d8bff;
+    --ok:#3ddc84;
+    --bad:#ff4d6d;
+    --card:rgba(255,255,255,.06);
+    --line:rgba(245,201,106,.35);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(circle at 10% 20%, rgba(255,77,94,.16), transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(61,139,255,.18), transparent 40%),
+      radial-gradient(circle at 50% 50%, #1a1640 0%, var(--bg) 70%);
+    color:var(--ink);
+    font-family:Georgia,"Times New Roman",serif;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  .stars{position:fixed;inset:0;pointer-events:none;opacity:.5;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, #fff, transparent),
+      radial-gradient(1px 1px at 70% 60%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 40% 80%, var(--gold), transparent),
+      radial-gradient(1px 1px at 90% 15%, #fff, transparent),
+      radial-gradient(1px 1px at 55% 10%, #fff, transparent);
+    background-size:300px 300px;
+    animation:drift 60s linear infinite;}
+  @keyframes drift{to{background-position:300px 300px}}
+
+  .screen{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+  .screen.active{display:flex}
+
+  /* START */
+  .logo{font-size:clamp(34px,8vw,60px);letter-spacing:.04em;color:var(--gold);text-shadow:0 0 24px rgba(245,201,106,.35)}
+  .sub{color:var(--muted);font-style:italic;margin:8px 0 26px;font-size:16px}
+  .teams-preview{display:flex;gap:14px;margin-bottom:24px;flex-wrap:wrap;justify-content:center}
+  .tp{padding:16px 22px;border-radius:18px;font-size:18px;font-weight:bold;min-width:150px}
+  .tp.red{background:rgba(255,77,94,.15);border:1px solid var(--red);color:var(--red)}
+  .tp.blue{background:rgba(61,139,255,.15);border:1px solid var(--blue);color:var(--blue)}
+  .tp small{display:block;font-weight:normal;color:var(--muted);font-size:13px;margin-top:4px}
+  .btn{
+    margin-top:8px;padding:16px 30px;border:none;border-radius:999px;cursor:pointer;
+    background:linear-gradient(135deg,var(--gold),#e8914a);color:#2a1b08;
+    font:inherit;font-weight:bold;font-size:18px;letter-spacing:.04em;
+    box-shadow:0 10px 30px rgba(245,201,106,.25);transition:transform .15s}
+  .btn:active{transform:scale(.97)}
+  .rules{margin-top:26px;max-width:480px;color:var(--muted);font-size:14px;line-height:1.7}
+  .rules b{color:var(--gold)}
+
+  /* GAME */
+  #game{padding:0;justify-content:flex-start}
+  .hud{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;justify-content:space-between;align-items:center;
+    padding:8px 14px;font-size:13px;color:var(--muted);background:rgba(12,10,29,.7);backdrop-filter:blur(6px);
+    border-bottom:1px solid rgba(255,255,255,.06);height:64px}
+  .hud .round{color:var(--gold);font-weight:bold;max-width:48%;text-align:left}
+  .hud .count{text-align:right}
+  .progress{position:fixed;top:64px;left:0;height:3px;background:var(--gold);width:0;transition:width .4s;z-index:6}
+
+  .timer{position:relative;width:58px;height:58px;flex:none}
+  .timer svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .timer .track{stroke:rgba(255,255,255,.1)}
+  .timer .bar{stroke:var(--gold);transition:stroke .3s}
+  .timer.hot .bar{stroke:var(--bad)}
+  .timer .sec{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:bold}
+  .timer.hot .sec{color:var(--bad);animation:pulse .5s infinite alternate}
+  @keyframes pulse{to{transform:scale(1.15)}}
+
+  .cols{position:fixed;top:67px;bottom:0;left:0;right:0;display:grid;grid-template-columns:1fr 1fr}
+  .cols::after{content:"";position:absolute;top:8%;bottom:8%;left:50%;width:1px;
+    background:linear-gradient(transparent,var(--gold),transparent);opacity:.5}
+  .team{display:flex;flex-direction:column;gap:10px;padding:14px 10px;min-height:0;overflow:auto}
+  .thead{display:flex;flex-direction:column;align-items:center;gap:2px}
+  .tname{font-size:clamp(14px,3.6vw,18px);font-weight:bold;letter-spacing:.04em}
+  .tscore{font-size:clamp(26px,7vw,38px);font-weight:bold;line-height:1}
+  .team.red .tname,.team.red .tscore{color:var(--red)}
+  .team.blue .tname,.team.blue .tscore{color:var(--blue)}
+
+  .qcard{
+    padding:14px 12px;border-radius:18px;text-align:center;
+    background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.02));
+    border:1px solid var(--line);box-shadow:0 14px 30px rgba(0,0,0,.4);min-height:120px;
+    display:flex;flex-direction:column;justify-content:center}
+  .qnum{font-size:11px;letter-spacing:.16em;color:var(--gold);text-transform:uppercase;margin-bottom:6px}
+  .qtext{font-size:clamp(14px,3.8vw,19px);line-height:1.4}
+
+  .opts{display:grid;grid-template-columns:1fr;gap:8px}
+  .opt{
+    min-height:50px;padding:10px 10px;border-radius:14px;cursor:pointer;
+    background:var(--card);border:1px solid rgba(255,255,255,.12);color:var(--ink);
+    font:inherit;font-size:clamp(13px,3.4vw,16px);line-height:1.3;text-align:center;
+    transition:transform .12s, background .2s, border-color .2s}
+  .team.red .opt:hover{border-color:var(--red)}
+  .team.blue .opt:hover{border-color:var(--blue)}
+  .opt:active{transform:scale(.97)}
+  .opt:disabled{cursor:not-allowed;opacity:.5}
+  .opt.correct{background:rgba(61,220,132,.25);border-color:var(--ok);opacity:1;box-shadow:0 0 16px rgba(61,220,132,.4)}
+  .opt.wrong{background:rgba(255,77,109,.22);border-color:var(--bad);opacity:.85}
+  .note{min-height:20px;text-align:center;font-size:14px;font-style:italic;color:var(--gold)}
+  .note.bad{color:var(--bad)}
+  .note.good{color:var(--ok)}
+
+  /* END */
+  .winner-crown{font-size:70px;animation:bob 1.6s ease-in-out infinite}
+  @keyframes bob{50%{transform:translateY(-8px)}}
+  .final{font-size:clamp(24px,6vw,40px);color:var(--gold);margin:10px 0}
+  .final-scores{display:flex;gap:40px;margin:18px 0 26px;font-size:18px}
+  .final-scores div span{display:block;font-size:48px;font-weight:bold}
+  .fs-red span{color:var(--red)} .fs-blue span{color:var(--blue)}
+
+  .confetti{position:fixed;top:-20px;width:10px;height:14px;opacity:.9;pointer-events:none;z-index:9;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+
+  .banner{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);
+    padding:22px 30px;border-radius:24px;background:rgba(12,10,29,.94);border:1px solid var(--gold);
+    color:var(--gold);font-size:clamp(20px,5.5vw,32px);font-weight:bold;opacity:0;pointer-events:none;z-index:10;
+    transition:opacity .35s, transform .35s;text-align:center;box-shadow:0 0 60px rgba(245,201,106,.3);max-width:90vw}
+  .banner.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  .banner small{display:block;font-size:15px;color:var(--muted);font-weight:normal;margin-top:6px}
+  .summary{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:20px;
+    background:rgba(6,5,15,.82);backdrop-filter:blur(4px);z-index:20}
+  .summary.show{display:flex}
+  .sum-card{width:min(440px,94vw);padding:26px 22px;border-radius:24px;text-align:center;
+    background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.02));
+    border:1px solid var(--gold);box-shadow:0 0 60px rgba(245,201,106,.25);animation:pop .4s ease}
+  @keyframes pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+  .sum-title{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+  .sum-round{font-size:22px;font-weight:bold;margin:6px 0 18px}
+  .sum-row{display:flex;justify-content:space-around;align-items:flex-end;gap:10px;margin-bottom:14px}
+  .sum-team{flex:1}
+  .sum-team .lbl{font-size:14px;font-weight:bold}
+  .sum-team .big{font-size:52px;font-weight:bold;line-height:1.1}
+  .sum-team.red .lbl,.sum-team.red .big{color:var(--red)}
+  .sum-team.blue .lbl,.sum-team.blue .big{color:var(--blue)}
+  .sum-team .tot{font-size:13px;color:var(--muted);margin-top:4px}
+  .sum-vs{font-size:18px;color:var(--muted);padding-bottom:22px}
+  .sum-verdict{font-size:18px;color:var(--ink);min-height:26px;margin:10px 0 20px;font-style:italic}
+</style>
+</head>
+<body>
+<div class="stars"></div>
+
+<!-- START -->
+<section id="start" class="screen active">
+  <div class="logo">Falsafa Duel</div>
+  <div class="sub">8-mavzu · Jamiyat falsafasi</div>
+  <div class="teams-preview">
+    <div class="tp red">🔴 Qizil jamoa<small>chapda</small></div>
+    <div class="tp blue">🔵 Ko‘k jamoa<small>o‘ngda</small></div>
+  </div>
+  <button class="btn" id="startBtn">Boshlash</button>
+  <div class="rules">
+    Har jamoa o‘z savollariga javob beradi — ikki jamoaning savollari bir-biridan farq qiladi.<br>
+    Jami <b>8 juftlik</b>, har birida <b>5 ta savol</b>.<br>
+    Har savolga <b>25 soniya</b> beriladi. To‘g‘ri javob bergan jamoaga <b>+1 ball</b>. Har savolga bitta urinish bor.
+  </div>
+</section>
+
+<!-- GAME -->
+<section id="game" class="screen">
+  <div class="hud">
+    <div class="round" id="hudRound">—</div>
+    <div class="timer" id="timer">
+      <svg viewBox="0 0 120 120">
+        <circle class="track" cx="60" cy="60" r="54" fill="none" stroke-width="9"/>
+        <circle class="bar" id="bar" cx="60" cy="60" r="54" fill="none" stroke-width="9" stroke-linecap="round"
+                stroke-dasharray="339.29" stroke-dashoffset="0"/>
+      </svg>
+      <div class="sec" id="sec">25</div>
+    </div>
+    <div class="count" id="hudCount">—</div>
+  </div>
+  <div class="progress" id="prog"></div>
+
+  <div class="cols">
+    <div class="team red" id="teamRed">
+      <div class="thead"><div class="tname">🔴 Qizil jamoa</div><div class="tscore" id="scoreRed">0</div></div>
+      <div class="qcard"><div class="qnum" id="qnumRed"></div><div class="qtext" id="qtextRed"></div></div>
+      <div class="opts" id="optsRed"></div>
+      <div class="note" id="noteRed"></div>
+    </div>
+    <div class="team blue" id="teamBlue">
+      <div class="thead"><div class="tname">🔵 Ko‘k jamoa</div><div class="tscore" id="scoreBlue">0</div></div>
+      <div class="qcard"><div class="qnum" id="qnumBlue"></div><div class="qtext" id="qtextBlue"></div></div>
+      <div class="opts" id="optsBlue"></div>
+      <div class="note" id="noteBlue"></div>
+    </div>
+  </div>
+</section>
+
+<!-- END -->
+<section id="end" class="screen">
+  <div class="winner-crown" id="crown">🏆</div>
+  <div class="final" id="finalText">G‘olib</div>
+  <div class="final-scores">
+    <div class="fs-red"><span id="fsRed">0</span>🔴 Qizil</div>
+    <div class="fs-blue"><span id="fsBlue">0</span>🔵 Ko‘k</div>
+  </div>
+  <button class="btn" id="againBtn">Qayta o‘ynash</button>
+</section>
+
+<div class="banner" id="banner"></div>
+
+<div class="summary" id="summary">
+  <div class="sum-card">
+    <div class="sum-title">Juftlik natijasi</div>
+    <div class="sum-round" id="sumTitle">1-juftlik</div>
+    <div class="sum-row">
+      <div class="sum-team red">
+        <div class="lbl">🔴 Qizil</div>
+        <div class="big" id="sumRed">0</div>
+        <div class="tot">jami: <span id="sumScoreRed">0</span></div>
+      </div>
+      <div class="sum-vs">vs</div>
+      <div class="sum-team blue">
+        <div class="lbl">🔵 Ko‘k</div>
+        <div class="big" id="sumBlue">0</div>
+        <div class="tot">jami: <span id="sumScoreBlue">0</span></div>
+      </div>
+    </div>
+    <div class="sum-verdict" id="sumVerdict"></div>
+    <button class="btn" id="sumBtn">Keyingi juftlik</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   1-TO‘PLAM — QIZIL JAMOA (chap)
+   ========================================================= */
+const ROUNDS_RED = [
+  { title: "Jamiyat tushunchasi", qs: [
+    ["Falsafaga ko‘ra jamiyat fanga ma’lum tizimlar orasida qanday tizim?", ["Eng sodda tizim","Eng murakkabi","Faqat iqtisodiy tizim","Tabiiy hodisa"], 1],
+    ["Falsafaning tarixga nisbatan asosiy vazifasi nimada?", ["Sanalarni yodlash","Tarix fanining metodologik asoslarini yaratish","Tarixiy shaxslarni maqtash","Arxeologik qazishmalar olib borish"], 1],
+    ["Tarix falsafasining muammolaridan biri qaysi?", ["Tarixiy jarayonning birligi va davriylashtirish tamoyillari","Tillarning tarjimasi","Ob-havoni bashorat qilish","Matematik hisob-kitob"], 0],
+    ["Tarixiy jarayonda qaysi omillar ayniqsa muhim rol o‘ynaydi?", ["Faqat iqtisodiy omillar","Tasodiflar va sub’ektiv omil","Faqat geografik omil","Hech qanday omil"], 1],
+    ["Falsafada har bir faylasuf jamiyatni qanday tushuntiradi?", ["Yagona standart sxema bo‘yicha","Faqat diniy aqidalar bilan","O‘z mo‘ljallariga tayanib, o‘ziga xos tarzda","Faqat statistika orqali"], 2]
+  ]},
+  { title: "Forobiy va madaniy-tarixiy tiplar", qs: [
+    ["Forobiy jamiyatni nechta madaniy-tarixiy tipga ajratgan?", ["Bitta","Ikkita","Uchta","To‘rtta"], 1],
+    ["Forobiyga ko‘ra, to‘liq jamiyatning birinchi bosqichi nima?", ["Qishloq","Oila","Shahar","Ovul"], 2],
+    ["Forobiy qarashlari Platon va Aristotel qarashlaridan nimasi bilan farq qiladi?", ["Jamiyatdagi o‘zgarishlarni inobatga olgani bilan","Shaharni butunlay inkor etgani bilan","Faqat qishloqni o‘rgangani bilan","Dinni rad etgani bilan"], 0],
+    ["Forobiyning fikricha, butun dunyodagi jamiyatning hukmdori kim?", ["Alohida olingan xalq boshlig‘i","Butun madaniy dunyo","Eng boy savdogar","Shahar hokimi"], 1],
+    ["Forobiy “to‘liqsiz jamiyat” deb qaysi jamoalarni atagan?", ["Millatlarni","Qishloq, ovul yoki bir oiladan iborat jamoalarni","Davlatlarni","Imperiyalarni"], 1]
+  ]},
+  { title: "Fuqarolik jamiyati", qs: [
+    ["Fuqarolik jamiyati ta’rifiga ko‘ra u nimadan iborat?", ["Davlat organlari tuzgan majburiy tashkilotlar","Davlat aralashuvidan qonun bilan himoyalangan ixtiyoriy uyushmalar majmui","Faqat siyosiy partiyalar","Yagona mafkura va qadriyatlar tizimi"], 1],
+    ["Zamonaviy jamiyatda davlat odamlarning qaysi sohasiga aralashmaydi?", ["Iqtisodiy shartnomalarga","Shaxsiy hayotiga","Tashqi siyosatga","Sud jarayonlariga"], 1],
+    ["“Fuqarolik jamiyati — ijtimoiy makon” degan ta’rif muallifi kim?", ["A.Navoiy","I.Karimov","A.de Tokvil","Forobiy"], 1],
+    ["A.de Tokvil Amerikada nimaga alohida e’tibor qaratgan?", ["Amerikaliklarning ixtiyoriy uyushmalar tuzishga moyilligiga","Xitoy iqtisodiyotiga","Rim huquqiga","Sovet tizimiga"], 0],
+    ["Zamonaviy jamiyatda hokimiyatning qaysi tarmoqlari bir-biridan ajratilgan?", ["Qonunchilik, ijro va sud","Diniy, harbiy va iqtisodiy","Markaziy va mahalliy","Partiya va davlat"], 0]
+  ]},
+  { title: "Sivilizatsiya", qs: [
+    ["“Sivilizatsiya” atamasi lotincha nimani anglatadi?", ["Fuqarolik, davlatga doir","Madaniyat va san’at","Shahar va qishloq","Din va e’tiqod"], 0],
+    ["Ibn Xaldun qaysi masalani birinchi bo‘lib ilmiy asosda ko‘targan?", ["Sivilizatsiyalarning paydo bo‘lishi, rivojlanishi va tanazzulini","Atom tuzilishini","Kompyuter dasturlashini","Yer aylanishini"], 0],
+    ["A.Toynbi tasnifiga ko‘ra noevropacha sivilizatsiyalar necha ta?", ["7 ta","13 ta","21 ta","33 ta"], 2],
+    ["Evropacha sivilizatsiya taxminan qaysi asrlarda shakllangan?", ["V–VI asrlarda","XV–XVII asrlarda","XIX–XX asrlarda","IX–X asrlarda"], 1],
+    ["Toffler, Bell va Pekka tasnifida hozirgi zamon sivilizatsiyasi qanday ataladi?", ["Ilk sivilizatsiya","Qishloq xo‘jalik-hunarmandchilik sivilizatsiyasi","Industrial sivilizatsiya","Postindustrial yoki informatsion sivilizatsiya"], 3]
+  ]},
+  { title: "Madaniyat va uning funksiyalari", qs: [
+    ["“Madaniyat” atamasi arabcha qaysi so‘zdan kelib chiqqan?", ["“Madina” — shahar","“Ilm” — bilim","“Adab” — odob","“Qalam” — yozuv"], 0],
+    ["Markaziy Osiyoda madaniyat qaysi ko‘rinishda shakllangan?", ["Harbiy kuch sifatida","Axloq ko‘rinishida","Savdo munosabati sifatida","Texnika sifatida"], 1],
+    ["Ma’rifat davri faylasuflari madaniyatning eng muhim jihati deb nimani hisoblagan?", ["Aql va oqilonalik tamoyillarining qaror topishini","Urushlar tarixini","Boylik to‘planishini","Sehr va afsonalarni"], 0],
+    ["Madaniyatning informativ funksiyasi nimani ta’minlaydi?", ["Ijtimoiy tajribani avlodlarga qoldirishni","Harbiy g‘alabani","Soliq yig‘ilishini","Savdo hajmini oshirishni"], 0],
+    ["Madaniyatning normativ funksiyasi nimadan iborat?", ["Me’yorlarni amalga joriy etishdan","Tabiatni buzishdan","Tilni o‘rganishdan","Xaritalar chizishdan"], 0]
+  ]},
+  { title: "Tarix falsafasi: formatsion yondashuv", qs: [
+    ["Tarixiy jarayonni besh ijtimoiy-iqtisodiy formatsiyaga ajratgan mutafakkir kim?", ["Karl Marks","Nikolay Danilevskiy","Arnold Toynbi","Forobiy"], 0],
+    ["Marksizmda ijtimoiy-iqtisodiy formatsiyaning o‘zagini nima tashkil qiladi?", ["Ishlab chiqarish munosabatlari","Diniy marosimlar","Ob-havo sharoiti","Til xususiyatlari"], 0],
+    ["Quyidagilardan qaysi biri besh formatsiyaning biri hisoblanadi?", ["Industrial","Informatsion","Feodalizm","Monada"], 2],
+    ["Formatsion yondashuvning zaif tomonlaridan biri nima?", ["Iqtisodiy omillarga e’tibor bermasligi","Tarixni yagona, chiziqli jarayon deb tushunishi va inson erkinligiga o‘rin qoldirmasligi","Jamiyatni butunlay e’tibordan chetda qoldirishi","Sivilizatsiyalarni o‘rganishi"], 1],
+    ["I.Karimov tarix falsafasini nima bilan uyg‘un holda ko‘radi?", ["Tarixiy xotira bilan","Iqtisodiy o‘sish bilan","Tabiiy ofatlar bilan","Harbiy kuch bilan"], 0]
+  ]},
+  { title: "Sivilizatsion va monadaga doir yondashuv", qs: [
+    ["Madaniy-tarixiy tiplar konsepsiyasini ilgari surgan tabiatshunos olim kim?", ["Osvald Shpengler","Nikolay Danilevskiy","Arnold Toynbi","Ibn Xaldun"], 1],
+    ["Shpengler jahon tarixida nechta madaniyatni farqlagan?", ["Sakkizta","Uchta","Yigirma birta","O‘n ikkita"], 0],
+    ["Toynbi dastlab nechta sivilizatsiyani farqlagan?", ["23 ta","8 ta","13 ta","5 ta"], 0],
+    ["Monadaga doir yondashuvning asosiy mohiyati nimada?", ["Jahon tarixini yagona davlat bilan cheklash","Jahon tarixini ko‘p sonli tarixiy individlardan iborat yaxlitlik deb qarash","Tarixni faqat iqtisod bilan izohlash","Tarixni tasodiflar yig‘indisi deb hisoblash"], 1],
+    ["Sivilizatsion yondashuvga ko‘ra tarixiy jarayon qanday xarakterga ega?", ["Qat’iy bir chiziqli","Izchil nochiziq","Tartibsiz va tasodifiy","Faqat yuqoriga yo‘nalgan"], 1]
+  ]},
+  { title: "Qadriyatlar va aksiologiya", qs: [
+    ["“Aksiologiya” atamasini XX asr boshida muomalaga kiritgan faylasuf kim?", ["P.Lapi","R.Dekart","B.Spinoza","A.Avloniy"], 0],
+    ["“Aksiologiya” so‘zi qaysi yunoncha so‘zlardan olingan?", ["“Axios” (qadriyat) va “logos” (fan)","“Demos” va “kratos”","“Polis” va “etos”","“Ethos” va “pathos”"], 0],
+    ["Qadriyat ta’rifiga ko‘ra uning mazmuni nimalar bilan belgilanadi?", ["Ob-havo sharoiti bilan","Jamiyat sub’ektlarining ehtiyojlari va manfaatlari bilan","Tabiat qonunlari bilan","Davlat byudjeti bilan"], 1],
+    ["Qadriyat va muhimlik tushunchalari orasidagi farq nimada?", ["Ular bir xil narsa","Muhimlik qadriyatga bo‘lgan munosabatning faollik darajasini tavsiflaydi","Qadriyat faqat salbiy bo‘ladi","Muhimlik faqat iqtisodda bo‘ladi"], 1],
+    ["Muhimlik qadriyatdan tashqari qaysi xususiyatga ega bo‘lishi mumkin?", ["Aksilqadriyat — ziyon xususiyatiga","Faqat yoqimlilik","Abadiylik","Hech qanday xususiyatga"], 0]
+  ]}
+];
+
+/* =========================================================
+   2-TO‘PLAM — KO‘K JAMOA (o‘ng). Savollari qizil jamoanikidan farq qiladi.
+   ========================================================= */
+const ROUNDS_BLUE = [
+  { title: "Jamiyat tushunchasi", qs: [
+    ["Tarixiy jarayonda sabablarni aniqlashga falsafa qanday yondashadi?", ["Faqat taxmin qiladi","Bu sabablarni aniqlashga qanday yondashish kerakligini belgilaydi","Bu savollarni rad etadi","Tarixni e’tiborsiz qoldiradi"], 1],
+    ["Falsafa kategoriyalar apparatini qaysi sohalar uchun ishlab chiqishda ishtirok etadi?", ["Faqat tibbiyot","Ijtimoiy va gumanitar fanlar","Faqat matematika","Faqat texnika"], 1],
+    ["Jamiyat hayoti jarayonlari haqida nima deyiladi?", ["Ular bir-biridan mustaqil","Ular bir-biri bilan uzviy bog‘liq","Ular umuman bog‘liq emas","Ular faqat tabiatga bog‘liq"], 1],
+    ["Har bir xalqning tarixi qanday?", ["Hammasi bir xil","Alohida va betakror","Faqat yozma","Faqat og‘zaki"], 1],
+    ["Falsafaning tarix falsafasi bo‘limi qanday savollarga javob beradi?", ["Tarixiy rivojlanishning maqsadi bormi, tarix muayyan mazmunga egami","Sanalar qanday yozilishi","Qaysi davlat boy","Qachon qor yog‘adi"], 0]
+  ]},
+  { title: "Forobiy va madaniy-tarixiy tiplar", qs: [
+    ["Forobiy fikricha, eng yaxshi fazilat qayerda qo‘lga kiritiladi?", ["Qishloqda","Shahar bo‘lgan madaniy jamiyatda","Sahroda","Dengiz bo‘yida"], 1],
+    ["Forobiyning “to‘liq jamiyat” tiplaridan biri qaysi?", ["Butun yer yuzidagi insonlarni qamrovchi yirik jamiyat","Faqat bir oila","Faqat bir qishloq","Faqat bir ovul"], 0],
+    ["Forobiy to‘liqsiz jamiyatlar haqida nima deydi?", ["Ular insonni takomillashtirishga qodir","Ular insonni takomillashtirishga qobil emas","Ular eng yuqori komillikni beradi","Ular mavjud emas"], 1],
+    ["Forobiy qarashlari Platon va Aristotel qarashlaridan qaysi jihatda ilgarilab ketgan?", ["Butun madaniy dunyo haqida fikr yuritgani bilan","Faqat shaharni tanlagani bilan","Dinni rad etgani bilan","Qishloqni tanlagani bilan"], 0],
+    ["“Madaniy-tarixiy tiplar” g‘oyasining dastlabki qarashlari kimga mansub?", ["Forobiyga","Hegelga","Marksga","Kantga"], 0]
+  ]},
+  { title: "Fuqarolik jamiyati", qs: [
+    ["Zamonaviy jamiyat qanday partiyaviy tizimga ega?", ["Bir partiyali","Ko‘ppartiyaviy","Partiyasiz","Monarxik"], 1],
+    ["Zamonaviy jamiyatda saylanadigan organlar qaysilar?", ["Faqat sud","Davlat hokimiyati va mahalliy vakillik organlari","Faqat armiya","Faqat bank"], 1],
+    ["Nodavlat tashkilotlari fuqarolik jamiyatining qanday qismi?", ["Odamlar manfaatlarini aks ettiruvchi asosiy qismi","Davlatning bir bo‘limi","Hukumat tomonidan boshqariladigan qismi","Faqat xorijda mavjud qismi"], 0],
+    ["Norvegiyada nohukumat tashkilotlari haqida nima deyilgan?", ["Har olti kishiga bittadan to‘g‘ri keladi","Har o‘n kishiga bittadan to‘g‘ri keladi","Har yuz kishiga bittadan to‘g‘ri keladi","Umuman mavjud emas"], 0],
+    ["Zamonaviy jamiyatda davlat odamlarni nimaga majburlamaydi?", ["Qonunga rioya qilishga","Yagona mafkura va qadriyatlar tizimini qabul qilishga","Soliq to‘lashga","Harbiy xizmatga"], 1]
+  ]},
+  { title: "Sivilizatsiya", qs: [
+    ["Sivilizatsiya atamasi qanday ma’nolarda ishlatiladi?", ["Faqat sport ma’nosida","Turli ma’nolarda ishlatiladi","Faqat tibbiyotda","Hech qayerda"], 1],
+    ["Ibn Xaldun sivilizatsiyalar haqida qaysi omillarni ta’kidlagan?", ["Tabiiy geografik va iqtisodiy omillarni","Faqat ob-havoni","Faqat tilni","Faqat harbiy kuchni"], 0],
+    ["Noevropacha sivilizatsiyalarning xo‘jalik asosi nimaga tayangan?", ["Qishloq xo‘jaligi va hunarmandchilikka","Sanoat robotlariga","Kosmik sayohatga","Birja savdosiga"], 0],
+    ["Evropacha sivilizatsiyaning o‘tmishdoshlari nimalar?", ["Antik dunyo madaniyati va Evropa xristian an’anasi","Faqat Xitoy madaniyati","Faqat Hindiston madaniyati","Faqat Amerika madaniyati"], 0],
+    ["Texnogen sivilizatsiyaning o‘ziga xos xususiyatlaridan biri nima?", ["Odamlar o‘rtasida muloqotning faollashuvi va samarali kommunikatsiya vositalari","Yozuvning yo‘qligi","Shaharlarning yo‘qligi","Savdoning to‘xtashi"], 0]
+  ]},
+  { title: "Madaniyat va uning funksiyalari", qs: [
+    ["Arablar kishilar hayotini qanday ikki turga ajratgan?", ["Badaviy va madaniy turmush","Shaharliy va dehqon","Boy va kambag‘al","Yozma va og‘zaki"], 0],
+    ["Uyg‘onish davrida madaniyat nima sifatida qaralgan?", ["Shaxsiy barkamollik belgisi sifatida","Harbiy kuch sifatida","Soliq manbai sifatida","Tabiat hodisasi sifatida"], 0],
+    ["Madaniy faoliyat qanday xususiyatlarga ega?", ["Ongli va qadriyatlarga qaratilgan","Tasodifiy va tartibsiz","Faqat hayvonlarga xos","Faqat iqtisodiy"], 0],
+    ["Madaniyat ijtimoiy hodisa sifatida nechta funksiyani bajaradi?", ["Faqat bitta funksiyani","Ko‘p sonli funksiyalarni","Hech qanday funksiyani","Faqat soliq yig‘ish funksiyasini"], 1],
+    ["Madaniyat ijtimoiy o‘zgarishlarga qanday munosabatda bo‘ladi?", ["Ularni boshqaradi va yo‘naltiradi","Ularga umuman ta’sir qilmaydi","Ularni to‘xtatadi","Faqat tabiatga bog‘liq bo‘ladi"], 0]
+  ]},
+  { title: "Tarix falsafasi: formatsion yondashuv", qs: [
+    ["Formatsion yondashuv tarixni qanday tushunadi?", ["Monistik, universalistik tarzda","Pluralistik tarzda","Tasodifiy deb hisoblaydi","Tarixni inkor etadi"], 0],
+    ["Marks formatsiyalar haqidagi ta’limotni qaysi asarlarida ilgari surgan?", ["“Kapital”","“Hamlet”","“Zulmat”","“Odisseya”"], 0],
+    ["Formatsiyalarning besh tipi qaysi tartibda sanaladi?", ["Ibtidoiy jamoa, quldorlik, feodalizm, kapitalizm, kommunizm","Kapitalizm, feodalizm, kommunizm","Faqat kommunizm","Monada, sivilizatsiya, madaniyat"], 0],
+    ["Zamonaviy davrda tarixiy jarayonni besh formatsiyali chiziqli sxemada talqin qilish qanday deyilgan?", ["Bir yoqlamalik","To‘liq haqiqat","Aniq fan","Ilmiy mukammallik"], 0],
+    ["Sivilizatsion yondashuv XIX–XX asrlarda qanday g‘oyani ilgari surgan?", ["Ko‘p sonli madaniyatlar va sivilizatsiyalar mavjudligini","Yagona davlat mavjudligini","Faqat diniy tarixni","Hech qanday tarixni"], 0]
+  ]},
+  { title: "Sivilizatsion va monadaga doir yondashuv", qs: [
+    ["Danilevskiy madaniy-tarixiy tiplar rivojlanishini qanday bosqichlarga bo‘ladi?", ["Vujudga kelish, voyaga etish, qarish, halok bo‘lish","Faqat bitta bosqich","Ikkita bosqich","Yettita bosqich"], 0],
+    ["Danilevskiy qonuniga ko‘ra bir tilda so‘zlashuvchi xalqlar qanday tipni tashkil etadi?", ["Bir madaniy-tarixiy tipni","Ikki davlatni","Hech narsani","Imperiyani"], 0],
+    ["Shpengler falsafasida asosiy kategoriya nima?", ["Madaniyat","Iqtisod","Armiya","Savdo"], 0],
+    ["Toynbi sivilizatsiyalardagi asosiy bosqichlarni qaysi tartibda farqlagan?", ["Vujudga kelish, rivojlanish, tanazzul, zavol","Zavol, vujudga kelish, tanazzul","Rivojlanish, zavol, vujudga kelish","Tanazzul, zavol, vujudga kelish"], 0],
+    ["Monadaga doir yondashuvning formatsion elementi nimaga e’tibor qaratadi?", ["Tarixiy rivojlanishning ayni bosqichidagi umumiy jihatlarga","Faqat shaxs xususiyatlariga","Faqat tabiatga","Faqat tilga"], 0]
+  ]},
+  { title: "Qadriyatlar va aksiologiya", qs: [
+    ["Qadimgi faylasuflar qadriyatlarni qanday tushunganlar?", ["Qadriyatni borliq bilan ayniylashtirganlar","Qadriyat umuman yo‘q deb hisoblaganlar","Qadriyatni faqat iqtisodda ko‘rganlar","Qadriyatni faqat dinda ko‘rganlar"], 0],
+    ["Alisher Navoiy ijodida qaysi qadriyatlar birinchi o‘ringa chiqqan?", ["Insonparvarlik va hurfikrlilik","Harbiy qudrat","Boylik to‘plash","Savdo foydasi"], 0],
+    ["Qadriyatning muhim xususiyati nimada?", ["U ijtimoiy xususiyatga ega","U faqat tabiatga tegishli","U umuman ijtimoiy emas","U faqat yulduzlarda mavjud"], 0],
+    ["Qadriyat ta’rifidagi ob’ektiv ahamiyat nimaga bog‘liq?", ["Jamiyat sub’ektlarining ehtiyojlari va manfaatlariga","Ob-havoga","Ko‘chmanchilar soniga","Davlat tamg‘asiga"], 0],
+    ["A.Avloniy “Turkiy guliston yoxud axloq” asarida qaysi qadriyatlarni ijobiy deb sanagan?", ["Muhabbat, yaxshilik, adolat, haqiqat","Razolat, g‘iybat, jaholat","Adovat va jaholat","Kibr va xiyonat"], 0]
+  ]}
+];
+
+/* ================= O‘YIN MANTIQI ================= */
+const TIME = 25;
+const CIRC = 2 * Math.PI * 54;
+const TOTAL = ROUNDS_RED.reduce((a, r) => a + r.qs.length, 0);
+const SIDES = ["Red", "Blue"];
+const ROUNDS = [ROUNDS_RED, ROUNDS_BLUE];
+
+let score = [0, 0];
+let roundBase = [0, 0];
+let round = 0, qi = 0, total = 0;
+let cur = [null, null];
+let done = [false, false];
+let stepOver = false;
+let timerId = null, endAt = 0, audioCtx = null;
+
+const $ = id => document.getElementById(id);
+
+function show(id){
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  $(id).classList.add("active");
+}
+
+function beep(freq = 660, dur = 0.12, type = "sine"){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(); o.stop(audioCtx.currentTime + dur);
+  }catch(e){}
+}
+
+function banner(text, sub = ""){
+  const b = $("banner");
+  b.innerHTML = text + (sub ? `<small>${sub}</small>` : "");
+  b.classList.add("show");
+  clearTimeout(banner._t);
+  banner._t = setTimeout(() => b.classList.remove("show"), 1700);
+}
+
+function confetti(){
+  const colors = ["#f5c96a","#ff4d5e","#3d8bff","#3ddc84","#ffffff"];
+  for(let i = 0; i < 90; i++){
+    const c = document.createElement("div");
+    c.className = "confetti";
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.background = colors[i % colors.length];
+    c.style.animationDuration = (2 + Math.random() * 2.5) + "s";
+    c.style.animationDelay = Math.random() * 0.8 + "s";
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 5000);
+  }
+}
+
+function startGame(){
+  score = [0, 0];
+  roundBase = [0, 0];
+  round = 0; qi = 0; total = 0;
+  show("game");
+  banner(ROUNDS_RED[0].title, "1-juftlik boshlanadi!");
+  setTimeout(loadStep, 1800);
+}
+
+function loadStep(){
+  stepOver = false;
+  done = [false, false];
+  cur = [ROUNDS_RED[round].qs[qi], ROUNDS_BLUE[round].qs[qi]].map(([q, opts, a]) => ({q, opts, a}));
+
+  $("hudRound").textContent = `${round + 1}-juftlik · ${ROUNDS_RED[round].title}`;
+  $("hudCount").textContent = `${total + 1}/${TOTAL}`;
+  $("prog").style.width = (total / TOTAL * 100) + "%";
+
+  SIDES.forEach((S, s) => {
+    $("qnum" + S).textContent = `${round + 1}-juftlik · ${qi + 1}/5`;
+    $("qtext" + S).textContent = cur[s].q;
+    $("note" + S).textContent = "";
+    $("note" + S).className = "note";
+    $("score" + S).textContent = score[s];
+    buildOpts(S, s);
+  });
+  startTimer();
+}
+
+function buildOpts(S, s){
+  const box = $("opts" + S);
+  box.innerHTML = "";
+  const order = cur[s].opts.map((_, i) => i).sort(() => Math.random() - 0.5);
+  order.forEach(i => {
+    const btn = document.createElement("button");
+    btn.className = "opt";
+    btn.textContent = cur[s].opts[i];
+    btn.dataset.idx = i;
+    btn.onclick = () => choose(s, i);
+    box.appendChild(btn);
+  });
+}
+
+function optBtns(s){
+  return [...$("opts" + SIDES[s]).children];
+}
+
+function choose(s, idx){
+  if(stepOver || done[s]) return;
+  done[s] = true;
+  const S = SIDES[s];
+  const correct = idx === cur[s].a;
+  optBtns(s).forEach(b => {
+    b.disabled = true;
+    if(+b.dataset.idx === cur[s].a) b.classList.add("correct");
+    else if(+b.dataset.idx === idx) b.classList.add("wrong");
+  });
+  const note = $("note" + S);
+  if(correct){
+    score[s]++;
+    $("score" + S).textContent = score[s];
+    note.textContent = "✔ To‘g‘ri! +1 ball";
+    note.className = "note good";
+    beep(990, 0.2, "triangle");
+  } else {
+    note.textContent = "✖ Noto‘g‘ri";
+    note.className = "note bad";
+    beep(220, 0.2, "sawtooth");
+  }
+  if(done[0] && done[1]) endStep();
+}
+
+function startTimer(){
+  clearInterval(timerId);
+  endAt = Date.now() + TIME * 1000;
+  let last = null;
+  const tick = () => {
+    const left = Math.max(0, (endAt - Date.now()) / 1000);
+    const secs = Math.ceil(left);
+    $("sec").textContent = secs;
+    $("bar").style.strokeDashoffset = CIRC * (1 - left / TIME);
+    $("timer").classList.toggle("hot", left <= 5);
+    if(left <= 5 && secs !== last && left > 0) beep(880, 0.06);
+    last = secs;
+    if(left <= 0) timeUp();
+  };
+  tick();
+  timerId = setInterval(tick, 150);
+}
+
+function timeUp(){
+  if(stepOver) return;
+  [0, 1].forEach(s => {
+    if(!done[s]){
+      done[s] = true;
+      const note = $("note" + SIDES[s]);
+      note.textContent = "⏰ Vaqt tugadi";
+      note.className = "note bad";
+    }
+  });
+  endStep(true);
+}
+
+function endStep(timedOut = false){
+  if(stepOver) return;
+  stepOver = true;
+  clearInterval(timerId);
+  [0, 1].forEach(s => {
+    optBtns(s).forEach(b => {
+      b.disabled = true;
+      if(+b.dataset.idx === cur[s].a) b.classList.add("correct");
+    });
+  });
+  if(timedOut) beep(330, 0.3, "square");
+  setTimeout(nextStep, 2200);
+}
+
+function nextStep(){
+  total++;
+  qi++;
+  if(qi >= 5){
+    showSummary();
+    return;
+  }
+  loadStep();
+}
+
+function showSummary(){
+  const rp = [score[0] - roundBase[0], score[1] - roundBase[1]];
+  const last = round + 1 >= ROUNDS_RED.length;
+  $("sumTitle").textContent = `${round + 1}-juftlik · ${ROUNDS_RED[round].title}`;
+  $("sumRed").textContent = rp[0];
+  $("sumBlue").textContent = rp[1];
+  $("sumScoreRed").textContent = score[0];
+  $("sumScoreBlue").textContent = score[1];
+  $("sumVerdict").textContent =
+    rp[0] > rp[1] ? "🔴 Bu juftlikda Qizil jamoa ko‘p topdi!" :
+    rp[1] > rp[0] ? "🔵 Bu juftlikda Ko‘k jamoa ko‘p topdi!" :
+    "🤝 Bu juftlikda durrang!";
+  $("sumBtn").textContent = last ? "Yakuniy natija" : "Keyingi juftlik";
+  $("summary").classList.add("show");
+}
+
+function continueAfterSummary(){
+  $("summary").classList.remove("show");
+  round++; qi = 0;
+  if(round >= ROUNDS_RED.length) return endGame();
+  roundBase = [score[0], score[1]];
+  banner(ROUNDS_RED[round].title, `${round + 1}-juftlik boshlanadi`);
+  setTimeout(loadStep, 1800);
+}
+
+function endGame(){
+  clearInterval(timerId);
+  $("prog").style.width = "100%";
+  $("fsRed").textContent = score[0];
+  $("fsBlue").textContent = score[1];
+  if(score[0] === score[1]){
+    $("crown").textContent = "🤝";
+    $("finalText").textContent = "Durrang!";
+  } else {
+    const w = score[0] > score[1] ? "🔴 Qizil jamoa" : "🔵 Ko‘k jamoa";
+    $("crown").textContent = "🏆";
+    $("finalText").textContent = `G‘olib: ${w}`;
+    confetti();
+  }
+  setTimeout(() => show("end"), 400);
+}
+
+$("startBtn").onclick = startGame;
+$("againBtn").onclick = () => show("start");
+$("sumBtn").onclick = continueAfterSummary;
+</script>
+</body>
+</html>
